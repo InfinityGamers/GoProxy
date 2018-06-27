@@ -5,8 +5,6 @@ import (
 	"github.com/infinitygamers/mcpeproxy/packets"
 )
 
-var LastY float64 = 0
-
 func RegisterDefaultHandlers(pkHandler *PacketHandler)  {
 	pkHandler.RegisterHandler(info.MovePlayerPacket, func(bytes []byte, host Host, connection *Connection) bool {
 		move := packets.NewMovePlayerPacket()
@@ -14,12 +12,7 @@ func RegisterDefaultHandlers(pkHandler *PacketHandler)  {
 		move.DecodeHeader()
 		move.Decode()
 
-		if connection.IsClient(host.GetAddress()) {
-
-			LastY = move.Position.Y
-
-			connection.client.Position = move.Position
-		}
+		connection.client.Position = move.Position
 
 		return false
 	})
