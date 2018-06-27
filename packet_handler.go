@@ -124,20 +124,6 @@ func (pkHandler *PacketHandler) FlowDatagram(host Host) {
 	host.WritePacket(datagram.Buffer)
 }
 
-// Sends an ACK packet to the packet sender
-// to confirm that the packet was not lost
-// if the the packet is not sent back
-func (pkHandler *PacketHandler) SendACK(host Host) {
-	ack := protocol.NewACK()
-	ack.Packets = []uint32{pkHandler.lastSequenceNumber}
-	ack.Encode()
-	if pkHandler.conn.IsServer(host.GetAddress()) {
-		pkHandler.conn.client.WritePacket(ack.Buffer)
-	}else{
-		pkHandler.conn.server.WritePacket(ack.Buffer)
-	}
-}
-
 // handles encapsulated packet
 // if the packet is batch it will call the packet handlers
 // if not it will just continue on sending the datagram
@@ -149,13 +135,32 @@ func (pkHandler *PacketHandler) HandleEncapsulated(packet *protocol.Encapsulated
 			batch := NewMinecraftPacketBatch()
 			batch.SetBuffer(packet.Buffer)
 			batch.Decode()
+
+			datagram := protocol.NewDatagram()
+			batch2 := NewMinecraftPacketBatch()
+
 			for _, pk := range batch.GetRawPackets() {
 				pkId := pk[0]
-				if pkHandler.CallPacketHandlers(pkId, host, pk) {
-					pkHandler.SendACK(host) //send ACK to confirm receive
-					handled = true
+				if !pkHandler.CallPacketHandlers(pkId, host, pk) {
+					batch2.AddRawPacket(pk)
 				}
 			}
+
+			batch2.Encode()
+			encap := protocol.NewEncapsulatedPacket()
+			encap.Buffer = batch2.Buffer
+			encap.Reliability = packet.Reliability
+			encap.HasSplit = false
+			encap.Length = packet.Length
+			encap.MessageIndex = packet.MessageIndex
+			encap.OrderIndex = packet.OrderIndex
+			datagram.SequenceNumber = pkHandler.lastSequenceNumber
+			pkHandler.lastSequenceNumber++
+			datagram.AddPacket(encap)
+			datagram.Encode()
+			host.WritePacket(datagram.Buffer)
+
+			handled = true
 		}
 	}else if PkId == ClientHandshakeId {
 		Notice(AnsiGreen + "Client has connected to the server.")

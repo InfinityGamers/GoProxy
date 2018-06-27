@@ -70,6 +70,7 @@ const (
 	PanicPrefix = "PANIC"
 )
 
+// returns a log prefix with custom prefix
 func LogFormat(prefix string) string {
 	now := time.Now()
 	return "[" + now.Format("2006-01-02 15:04:05") + "][Log/" + prefix + "]: "
