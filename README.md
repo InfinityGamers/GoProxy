@@ -15,4 +15,3 @@ To use you must have Go version 1.9 or greater installed.
 
 This will not work on encrypted servers such as LBSG, Mineplex, etc. <br><br>
 At the moment it has very simple features, but I will continue on updating as much as I can. <br>
-I am still am still figuring out if there is a way to cancel packets from client -> proxy -> server.<br>
