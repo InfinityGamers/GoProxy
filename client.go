@@ -10,40 +10,52 @@ import (
 )
 
 type Client struct {
-	Host // server extends a host that has writable packets
-	// server's udp address
+	Host // Server extends a host that has writable packets
+	// Server's udp address
 	addr net.UDPAddr
-	// the main proxy
-	proxy *Proxy
-	// the connection between the server
-	// and the client
-	conn *Connection
-	// a bool that is true if the client
-	// is connected with the server/proxy
-	connection bool
-	// the UUID of the client's player
+	// the main Proxy
+	Proxy *Proxy
+	// the Connection between the Server
+	// and the Client
+	Conn *Connection
+	// a bool that is true if the Client
+	// is connected with the Server/Proxy
+	Connection bool
+	// the UUID of the Client's player
 	uuid uuid.UUID
 	// the entity runtime id of
-	// the client's player
+	// the Client's player
 	//entityRuntimeID uint64
-	// the client's position in the level
+	// the Client's position in the level
 	Position r3.Vector
 }
 
-// returns new client host
+// returns new Client host
 // that has writable packets
 func NewClient(proxy *Proxy, conn *Connection) *Client  {
 	client := Client{}
-	client.proxy = proxy
-	client.conn = conn
-	client.connection = false
+	client.Proxy = proxy
+	client.Conn = conn
+	client.Connection = false
 	return &client
 }
 
+// returns if this host is the client
+// this is the client struct to it returns true
+func (client Client) IsClient() bool {
+	return true
+}
+
+// returns if this host is the client
+// this is the client struct to it returns false
+func (client Client) IsServer() bool {
+	return false
+}
+
 // this function is from the host interface
-// it writes a packet buffer to the client
+// it writes a packet buffer to the Client
 func (client Client) WritePacket(buffer []byte) {
-	_, err := client.proxy.UDPConn.WriteTo(buffer, &client.addr)
+	_, err := client.Proxy.UDPConn.WriteTo(buffer, &client.addr)
 	if err != nil {
 		Alert(err.Error())
 	}
@@ -59,51 +71,51 @@ func (client Client) SendPacket(packet packets2.IPacket) {
 // it sends a batch packet:
 // a packet with multiple packets inside
 func (client Client) SendBatchPacket(packets []packets2.IPacket) {
-	datagram := client.conn.pkHandler.datagramBuilder.BuildFromPackets(packets)
+	datagram := client.Conn.pkHandler.DatagramBuilder.BuildFromPackets(packets)
 	client.WritePacket(datagram.Buffer)
 }
 
 // this set's the udp address
-// which is used to communicate with the client
+// which is used to communicate with the Client
 func (client *Client) SetAddress(addr net.UDPAddr) {
 	client.addr = addr
 }
 
-// returns the client's address as net.UDPAddr
+// returns the Client's address as net.UDPAddr
 func (client Client) GetAddress() net.UDPAddr {
 	return client.addr
 }
 
-// set true if the client is connected with the
-// server/proxy
+// set true if the Client is connected with the
+// Server/Proxy
 func (client *Client) SetConnected(b bool) {
-	client.connection = b
+	client.Connection = b
 }
 
-// returns true if the client is connected with the
-// server/proxy
+// returns true if the Client is connected with the
+// Server/Proxy
 func (client *Client) IsConnected() bool {
-	return client.connection
+	return client.Connection
 }
 
-// sends the client's player a string message
+// sends the Client's player a string message
 func (client *Client) SendMessage(m string) {
 	text := packets.NewTextPacket()
 	text.Message = m
 	client.SendPacket(text)
 }
 
-// changes the client's player game mode
-// although it updates for the client, it will
-// not on the server's side
+// changes the Client's player game mode
+// although it updates for the Client, it will
+// not on the Server's side
 func (client *Client) SetGameMode(g int32) {
 	gm := packets.NewSetGamemodePacket()
 	gm.GameMode = g
-	client.conn.server.SendPacket(gm)
+	client.Conn.Server.SendPacket(gm)
 	client.SendPacket(gm)
 }
 
-// Set a screen title and subtitle to the client
+// Set a screen title and subtitle to the Client
 func (client *Client) SetTitle(title, subtitle string, fadeInTime, stayTime, fadeOutTime int32) {
 	// title
 	t := packets.NewSetTitlePacket()
@@ -128,8 +140,8 @@ func (client *Client) SendJoinMessage() {
 	go func() {
 		time.Sleep(5 * time.Second)
 		client.SendMessage(BrightBlue + "==============================")
-		client.SendMessage(BrightGreen + Prefix + Orange + "You are using " + Author + "'s proxy version " + Version)
+		client.SendMessage(BrightGreen + Prefix + Orange + "You are using " + Author + "'s Proxy version " + Version)
 		client.SendMessage(BrightBlue + "==============================")
-		client.SetTitle(BrightGreen + Author + "'s Proxy", Orange + Author + "'s proxy version " + Version, 1, 1, 1)
+		client.SetTitle(BrightGreen + Author + "'s Proxy", Orange + Author + "'s Proxy version " + Version, 1, 1, 1)
 	}()
 }

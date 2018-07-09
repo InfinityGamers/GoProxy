@@ -6,36 +6,48 @@ import (
 )
 
 type Server struct {
-	Host // server extends a host that has writable packets
-	// server's udp address
+	Host // Server extends a host that has writable packets
+	// Server's udp address
 	addr *net.UDPAddr
-	// the main proxy
-	proxy *Proxy
-	// the connection between the server
-	// and the client
-	conn *Connection
-	// server data contains the server's query info such as:
-	// server name, version, protocol, players, software, etc...
-	data ServerData
-	// the server's uid
+	// the main Proxy
+	Proxy *Proxy
+	// the Connection between the Server
+	// and the Client
+	Conn *Connection
+	// Server Data contains the Server's query info such as:
+	// Server name, version, protocol, players, software, etc...
+	Data ServerData
+	// the Server's uid
 	serverId int64
 }
 
 
-// returns new server host
+// returns new Server host
 // that has writable packets
 func NewServer(proxy *Proxy, conn *Connection) *Server  {
 	server := Server{}
-	server.proxy = proxy
-	server.conn = conn
-	server.data = NewServerData()
+	server.Proxy = proxy
+	server.Conn = conn
+	server.Data = NewServerData()
 	return &server
 }
 
+// returns if this host is the client
+// this is the server struct to it returns false
+func (server Server) IsClient() bool {
+	return false
+}
+
+// returns if this host is the client
+// this is the server struct to it returns true
+func (server Server) IsServer() bool {
+	return true
+}
+
 // this function is from the host interface
-// it writes a packet buffer to the server
+// it writes a packet buffer to the Server
 func (server Server) WritePacket(buffer []byte) {
-	_, err := server.proxy.WriteToUDP(buffer, server.addr)
+	_, err := server.Proxy.WriteToUDP(buffer, server.addr)
 	if err != nil {
 		Alert(err.Error())
 	}
@@ -51,22 +63,22 @@ func (server Server) SendPacket(packet packets.IPacket) {
 // it sends a batch packet:
 // a packet with multiple packets inside
 func (server Server) SendBatchPacket(packets []packets.IPacket) {
-	datagram := server.conn.pkHandler.datagramBuilder.BuildFromPackets(packets)
+	datagram := server.Conn.pkHandler.DatagramBuilder.BuildFromPackets(packets)
 	server.WritePacket(datagram.Buffer)
 }
 
 // this set's the udp address
-// which is used to communicate with the server
+// which is used to communicate with the Server
 func (server *Server) SetAddress(addr *net.UDPAddr) {
 	server.addr = addr
 }
 
-// returns the server's address as net.UDPAddr
+// returns the Server's address as net.UDPAddr
 func (server Server) GetAddress() net.UDPAddr {
 	return *server.addr
 }
 
-// this returns the server's data struct
+// this returns the Server's Data struct
 func (server *Server) GetServerData() ServerData {
 	return server.GetServerData()
 }

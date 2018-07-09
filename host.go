@@ -10,4 +10,6 @@ type Host interface {
 	SendPacket(packets.IPacket)
 	SendBatchPacket([]packets.IPacket)
 	GetAddress() net.UDPAddr
+	IsClient() bool
+	IsServer() bool
 }

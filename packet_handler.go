@@ -1,24 +1,15 @@
 package mcpeproxy
 
 import (
-	"github.com/Irmine/GoRakLib/protocol"
 	"net"
+	"github.com/Irmine/GoRakLib/protocol"
+	"github.com/Irmine/GoMine/net/packets"
 )
 
 const (
 	ClientHandshakeId = 0x13
 	ClientCancelConnectId = 0x15
 )
-
-const (
-	// Maximum MTU size is the maximum packet size.
-	// Any MTU size above this will get limited to the maximum.
-	MaximumMTUSize = 1492
-	// MinimumMTUSize is the minimum packet size.
-	// Any MTU size below this will get set to the minimum.
-	MinimumMTUSize = 400
-)
-
 
 // Indexes is used for the collection of indexes related to datagrams and encapsulated packets.
 // It uses several maps and is therefore protected by a mutex.
@@ -29,63 +20,77 @@ type Indexes struct {
 }
 
 // Orders is used to re-order the indexes of encapsulated packets
-// this is to avoid message order conflicts with the client and server
-type Orders struct { // not used currently
-	SplitIndex uint
-	OrderIndex uint32
-	MessageIndex uint32
-	// the last datagram sequence number
-	sequenceNumber uint32
+// this is to avoid message order conflicts with the Client and Server
+type Orders struct {
+	//SplitIndex uint
+
+	// the last encapsulated order
+	// index number from both hosts
+	///OrderIndex uint32
+
+	// the last encapsulated
+	// message index number from both hosts
+	//MessageIndex uint32
+
+	// the last datagram sequence
+	// number from both hosts
+	SequenceNumber uint32
 }
 
 // PacketHandler handles each datagram and
 // calls all registered packet handlers to handle the packet,
 // once ready, sends it to the right host
 type PacketHandler struct {
-	// connection is the connection between the
-	// server and the client
-	conn *Connection
+	// Connection is the Connection between the
+	// Server and the Client
+	Conn *Connection
 	// a map where handler functions are stored
 	// parameters:
 	// 1. the bytes received from the packet
 	// 2. the host to where the packet is headed
-	// 3. the connection between the server and client
+	// 3. the Connection between the Server and Client
 	// return true if the packet should be cancelled
 	handlers map[byte][]func([]byte, Host, *Connection) bool
 	// used for the collection of indexes
 	// related to datagrams and encapsulated packets.
 	splits Indexes
-	// used for order of encapsulated packets
-	// related to datagrams and encapsulated packets.
+	// Orders is used to re-order
+	// the indexes of encapsulated packets
+	// this is to avoid message order
+	// conflicts with the Client and Server
 	orders Orders
 	// DatagramBuilds builds datagram
 	// either from a packet or from raw bytes
 	// datagrams are the communication method
 	// for the RakNet protocol
-	datagramBuilder DatagramBuilder
+	DatagramBuilder DatagramBuilder
 	// the number of the last datagram
-	// sent by both the client and server
+	// sent by both hosts
 	lastSequenceNumber uint32
-	// the last datagram received
+	// the last datagram received from both hosts
 	datagram *protocol.Datagram
-	// the last encapsulated received
-	encapsulated *protocol.EncapsulatedPacket
+	// a slice of raw packets that will be
+	// sent out the server next tick, packets are sent
+	// every tick via the OutboundPacketTicker,
+	// 20 ticks = 1 second, 1 tick ~ 0.05 seconds
+	OutBoundPackets [][]byte
 	// a bool that returns true if the
-	// client is ready for packets
-	ready bool
+	// Client is ready for packets
+	Ready bool
 }
 
 // returns a new packet handler
-// PacketHandler handles each datagram to make sure
-// it goes to the right place, once ready, it calls all registered
-// packet handlers to handle the packet
+// PacketHandler handles each datagram and
+// calls all registered packet handlers to handle the packet,
+// once ready, sends it to the right host
 func NewPacketHandler() *PacketHandler {
 	h := PacketHandler{}
 	h.handlers = make(map[byte][]func([]byte, Host, *Connection) bool)
 	h.splits = Indexes{splits: make(map[int16][]*protocol.EncapsulatedPacket), splitCounts: make(map[int16]uint)}
-	h.orders = Orders{0, 0, 0, 0}
-	h.datagramBuilder = NewDatagramBuilder()
-	h.datagramBuilder.pkHandler = &h
+	h.DatagramBuilder = NewDatagramBuilder()
+	h.DatagramBuilder.pkHandler = &h
+	h.OutBoundPackets = [][]byte{}
+	h.orders = Orders{}
 	return &h
 }
 
@@ -93,7 +98,7 @@ func NewPacketHandler() *PacketHandler {
 // every function should have these parameters:
 // 1. the bytes received from the packet
 // 2. the host to where the packet is headed
-// 3. the connection between the server and client
+// 3. the Connection between the Server and Client
 // return true if the packet should be cancelled
 func (pkHandler *PacketHandler) RegisterHandler(pkId byte, f func([]byte, Host, *Connection) bool) {
 	if _, ok := pkHandler.handlers[pkId]; !ok {
@@ -108,7 +113,7 @@ func (pkHandler *PacketHandler) CallPacketHandlers(pkId byte, host Host, packet 
 	cancelled := false
 	if _, ok := pkHandler.handlers[pkId]; ok {
 		for _, v := range pkHandler.handlers[pkId] {
-			if v(packet, host, pkHandler.conn) {
+			if v(packet, host, pkHandler.Conn) {
 				cancelled = true
 			}
 		}
@@ -124,6 +129,24 @@ func (pkHandler *PacketHandler) FlowDatagram(host Host) {
 	host.WritePacket(datagram.Buffer)
 }
 
+// adds a packet to the slice of
+// packets that will be sent out the server next tick,
+// packets are sent every tick via the OutboundPacketTicker,
+// 20 ticks = 1 second, 1 tick ~ 0.05 seconds
+func (pkHandler *PacketHandler) AddOutboundPacket(packet packets.IPacket)  {
+	packet.EncodeHeader()
+	packet.Encode()
+	pkHandler.OutBoundPackets = append(pkHandler.OutBoundPackets, packet.GetBuffer())
+}
+
+// adds a raw packet to the slice of
+// packets that will be sent out the server next tick,
+// packets are sent every tick via the OutboundPacketTicker,
+// 20 ticks = 1 second, 1 tick ~ 0.05 seconds
+func (pkHandler *PacketHandler) AddOutboundRawPacket(packet []byte)  {
+	pkHandler.OutBoundPackets = append(pkHandler.OutBoundPackets, packet)
+}
+
 // handles encapsulated packet
 // if the packet is batch it will call the packet handlers
 // if not it will just continue on sending the datagram
@@ -131,18 +154,25 @@ func (pkHandler *PacketHandler) HandleEncapsulated(packet *protocol.Encapsulated
 	handled := false
 	PkId := packet.Buffer[0]
 	if PkId == BatchId {
-		if pkHandler.ready {
+		if pkHandler.Ready {
 			batch := NewMinecraftPacketBatch()
 			batch.SetBuffer(packet.Buffer)
 			batch.Decode()
-
-			datagram := protocol.NewDatagram()
 			batch2 := NewMinecraftPacketBatch()
 
 			for _, pk := range batch.GetRawPackets() {
 				pkId := pk[0]
 				if !pkHandler.CallPacketHandlers(pkId, host, pk) {
 					batch2.AddRawPacket(pk)
+				}
+			}
+
+			if len(pkHandler.OutBoundPackets) > 0 {
+				if host.IsServer() {
+					for _, pk := range pkHandler.OutBoundPackets {
+						batch2.AddRawPacket(pk)
+					}
+					pkHandler.OutBoundPackets = nil
 				}
 			}
 
@@ -154,26 +184,36 @@ func (pkHandler *PacketHandler) HandleEncapsulated(packet *protocol.Encapsulated
 			encap.Length = packet.Length
 			encap.MessageIndex = packet.MessageIndex
 			encap.OrderIndex = packet.OrderIndex
-			datagram.SequenceNumber = pkHandler.lastSequenceNumber
-			pkHandler.lastSequenceNumber++
-			datagram.AddPacket(encap)
-			datagram.Encode()
-			host.WritePacket(datagram.Buffer)
+			dgram := protocol.NewDatagram()
+			dgram.AddPacket(encap)
+			dgram.SequenceNumber = pkHandler.lastSequenceNumber
+			dgram.Encode()
+			host.WritePacket(dgram.Buffer)
 
 			handled = true
 		}
+
 	}else if PkId == ClientHandshakeId {
-		Notice(AnsiGreen + "Client has connected to the server.")
+		Info(AnsiGreen + "Client has connected to the Server.")
 		pkHandler.FlowDatagram(host)
-		pkHandler.conn.client.SendJoinMessage()
-		pkHandler.ready = true
+		pkHandler.Conn.Client.SendJoinMessage()
+		pkHandler.Ready = true
 		handled = true
 	} else if PkId == ClientCancelConnectId {
-		Notice(AnsiBrightRed + "Client has disconnected from the server.")
-		pkHandler.conn.client.SetConnected(false)
+		Info(AnsiBrightRed + "Client has disconnected from the Server.")
+		pkHandler.Conn.Client.SetConnected(false)
 		pkHandler.FlowDatagram(host)
+		pkHandler.Ready = false
 		handled = true
 	} else {
+
+		switch PkId {
+		case protocol.IdConnectionRequest:
+			Info(AnsiBrightCyan + "Connection request from client")
+		case protocol.IdConnectionAccept:
+			Info(AnsiBrightCyan + "Connection request accepted from server")
+		}
+
 		pkHandler.FlowDatagram(host)
 		handled = true
 	}
@@ -223,8 +263,8 @@ func (pkHandler *PacketHandler) HandleSplitEncapsulated(packet *protocol.Encapsu
 }
 
 // this handles all the incoming packets
-// after the client has clicked the server
-// of the proxy
+// after the Client has clicked the Server
+// of the Proxy
 func (pkHandler *PacketHandler) HandleIncomingPacket(buffer []byte, host Host, addr net.UDPAddr) {
 	MessageId := buffer[0]
 	if (MessageId & protocol.BitFlagValid) != 0 {

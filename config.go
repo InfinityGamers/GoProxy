@@ -8,8 +8,8 @@ import (
 
 type Config struct {
 
-	ServerAddr string `yaml:"server-address"`
-	ServerPort int    `yaml:"server-port"`
+	ServerAddr string `yaml:"Server-address"`
+	ServerPort int    `yaml:"Server-port"`
 	BindAddr   string `yaml:"bind-address"`
 	BindPort   int    `yaml:"bind-port"`
 

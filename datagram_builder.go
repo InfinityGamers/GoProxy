@@ -20,19 +20,19 @@ func NewDatagramBuilder() DatagramBuilder {
 // this builds a datagram from packets
 // with the encode/decode function
 // and sets the order of the datagram
-// to the proxy's own sequence number order
+// to the Proxy's own sequence number order
 func (db *DatagramBuilder) BuildFromPackets(packets []packets.IPacket) protocol.Datagram {
-	datagram := db.BuildRawFromPackets(packets, 0, db.pkHandler.orders.sequenceNumber)
-	db.pkHandler.orders.sequenceNumber++
+	db.pkHandler.orders.SequenceNumber++
+	datagram := db.BuildRawFromPackets(packets, Unreliable, db.pkHandler.orders.SequenceNumber, 0, 0)
 	return datagram
 }
 
 // this builds a datagram from raw bytes
 // and sets the order of the datagram
-// to the proxy's own sequence number order
+// to the Proxy's own sequence number order
 func (db *DatagramBuilder) BuildFromBuffer(packets []byte) protocol.Datagram {
-	datagram := db.BuildRaw(append([][]byte{}, packets), 0, db.pkHandler.orders.sequenceNumber)
-	db.pkHandler.orders.sequenceNumber++
+	db.pkHandler.orders.SequenceNumber++
+	datagram := db.BuildRaw(append([][]byte{}, packets), Unreliable, db.pkHandler.orders.SequenceNumber, 0, 0)
 	return datagram
 }
 
@@ -41,8 +41,8 @@ func (db *DatagramBuilder) BuildFromBuffer(packets []byte) protocol.Datagram {
 // and sets the order of the datagram
 // to the latest sequence number received
 func (db *DatagramBuilder) BuildFromPacketsWithLatestSequence(packets []packets.IPacket) protocol.Datagram {
-	datagram := db.BuildRawFromPackets(packets, 0, db.pkHandler.lastSequenceNumber)
 	db.pkHandler.lastSequenceNumber++
+	datagram := db.BuildRawFromPackets(packets, Unreliable, db.pkHandler.lastSequenceNumber, 0, 0)
 	return datagram
 }
 
@@ -50,8 +50,8 @@ func (db *DatagramBuilder) BuildFromPacketsWithLatestSequence(packets []packets.
 // and sets the order of the datagram
 // to the latest sequence number received
 func (db *DatagramBuilder) BuildFromBufferWithLatestSequence(packets []byte) protocol.Datagram {
-	datagram := db.BuildRaw(append([][]byte{}, packets), 0, db.pkHandler.lastSequenceNumber)
 	db.pkHandler.lastSequenceNumber++
+	datagram := db.BuildRaw(append([][]byte{}, packets), Unreliable, db.pkHandler.lastSequenceNumber, 0, 0)
 	return datagram
 }
 
@@ -60,12 +60,14 @@ func (db *DatagramBuilder) BuildFromBufferWithLatestSequence(packets []byte) pro
 // encapsulated packet to a custom one
 // and the order of the datagram
 // to a custom sequence number
-func (db *DatagramBuilder) BuildRaw(packets [][]byte, reliability byte, sequenceNumber uint32) protocol.Datagram {
+func (db *DatagramBuilder) BuildRaw(packets [][]byte, reliability byte, sequenceNumber, orderIndex, messageIndex uint32) protocol.Datagram {
 	batch := NewMinecraftPacketBatch()
 	batch.rawPackets = packets
 	batch.Encode()
 	encapsulated := protocol.NewEncapsulatedPacket()
 	encapsulated.Reliability = reliability
+	encapsulated.OrderIndex = orderIndex
+	encapsulated.MessageIndex = messageIndex
 	encapsulated.Buffer = batch.Buffer
 	datagram := protocol.NewDatagram()
 	datagram.SequenceNumber = sequenceNumber
@@ -80,14 +82,17 @@ func (db *DatagramBuilder) BuildRaw(packets [][]byte, reliability byte, sequence
 // encapsulated packet to a custom one
 // and the order of the datagram
 // to a custom sequence number
-func (db *DatagramBuilder) BuildRawFromPackets(packets []packets.IPacket, reliability byte, sequenceNumber uint32) protocol.Datagram {
+func (db *DatagramBuilder) BuildRawFromPackets(packets []packets.IPacket, reliability byte, sequenceNumber, orderIndex, messageIndex uint32) protocol.Datagram {
 	batch := NewMinecraftPacketBatch()
 	for _, p := range packets {
 		batch.AddPacket(p)
 	}
 	batch.Encode()
 	encapsulated := protocol.NewEncapsulatedPacket()
+	encapsulated.HasSplit = false
 	encapsulated.Reliability = reliability
+	encapsulated.OrderIndex = orderIndex
+	encapsulated.MessageIndex = messageIndex
 	encapsulated.Buffer = batch.Buffer
 	datagram := protocol.NewDatagram()
 	datagram.SequenceNumber = sequenceNumber

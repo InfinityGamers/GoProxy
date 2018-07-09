@@ -15,21 +15,21 @@ const (
 )
 
 type Connection struct {
-	proxy *Proxy
-	client *Client
-	server *Server
-	pkHandler *PacketHandler
+	Proxy      *Proxy
+	Client     *Client
+	Server     *Server
+	pkHandler  *PacketHandler
 }
 
 func NewConnection(proxy *Proxy) Connection {
 	conn := Connection{}
-	conn.proxy = proxy
+	conn.Proxy = proxy
 
-	conn.client = NewClient(proxy, &conn)
-	conn.server = NewServer(proxy, &conn)
+	conn.Client = NewClient(proxy, &conn)
+	conn.Server = NewServer(proxy, &conn)
 	conn.pkHandler = NewPacketHandler()
 
-	conn.pkHandler.conn = &conn
+	conn.pkHandler.Conn = &conn
 
 	RegisterDefaultHandlers(conn.pkHandler)
 
@@ -37,11 +37,11 @@ func NewConnection(proxy *Proxy) Connection {
 }
 
 func (conn *Connection) GetClient() *Client {
-	return conn.client
+	return conn.Client
 }
 
 func (conn *Connection) GetServer() *Server {
-	return conn.server
+	return conn.Server
 }
 
 func (conn *Connection) GetPacketHandler() *PacketHandler {
@@ -49,19 +49,19 @@ func (conn *Connection) GetPacketHandler() *PacketHandler {
 }
 
 func (conn *Connection) IsClient(addr net.UDPAddr) bool {
-	return conn.client.addr.IP.Equal(addr.IP)
+	return conn.Client.addr.IP.Equal(addr.IP)
 }
 
 func (conn *Connection) IsServer(addr net.UDPAddr) bool {
-	return conn.server.GetAddress().IP.Equal(addr.IP)
+	return conn.Server.GetAddress().IP.Equal(addr.IP)
 }
 
 func (conn *Connection) handleUnconnectedPing(addr net.UDPAddr, buffer []byte) {
-	conn.client.SetAddress(addr)
-	conn.server.WritePacket(buffer)
+	conn.Client.SetAddress(addr)
+	conn.Server.WritePacket(buffer)
 
 	//stringAddr := addr.IP.String()
-	//Info("Received unconnected ping from client address: " + stringAddr)
+	//Info("Received unconnected ping from Client address: " + stringAddr)
 }
 
 func (conn *Connection) handleUnconnectedPong(addr net.UDPAddr, buffer []byte) {
@@ -70,48 +70,48 @@ func (conn *Connection) handleUnconnectedPong(addr net.UDPAddr, buffer []byte) {
 	pk.Decode()
 	pk.Encode()
 
-	conn.client.WritePacket(pk.Buffer)
-	conn.server.data.ParseFromString(pk.PongData)
+	conn.Client.WritePacket(pk.Buffer)
+	conn.Server.Data.ParseFromString(pk.PongData)
 
 	//stringAddr := addr.IP.String()
-	//Info("Received unconnected pong from server address: " + stringAddr)
+	//Info("Received unconnected pong from Server address: " + stringAddr)
 }
 
 func (conn *Connection) handleConnectionRequest1(addr net.UDPAddr, buffer []byte) {
-	conn.client.SetAddress(addr)
-	conn.server.WritePacket(buffer)
+	conn.Client.SetAddress(addr)
+	conn.Server.WritePacket(buffer)
 
 	//stringAddr := addr.IP.String()
 	//
-	//Info("Received connection request 1 from client address: " + stringAddr)
+	//Info("Received Connection request 1 from Client address: " + stringAddr)
 }
 
 func (conn *Connection) handleConnectionReply1(addr net.UDPAddr, buffer []byte) {
 	//stringAddr := addr.IP.String()
-	//Info("Received connection reply 1 from server address: " + stringAddr)
+	//Info("Received Connection reply 1 from Server address: " + stringAddr)
 
 	pk := protocol.NewOpenConnectionReply1()
 	pk.SetBuffer(buffer)
 	pk.Decode()
 	pk.Encode()
 
-	conn.client.WritePacket(pk.Buffer)
+	conn.Client.WritePacket(pk.Buffer)
 }
 
 func (conn *Connection) handleConnectionRequest2(addr net.UDPAddr, buffer []byte) {
-	conn.client.SetAddress(addr)
-	conn.server.WritePacket(buffer)
+	conn.Client.SetAddress(addr)
+	conn.Server.WritePacket(buffer)
 
 	//stringAddr := addr.IP.String()
 	//
-	//Info("Received connection request 2 from client address: " + stringAddr)
+	//Info("Received Connection request 2 from Client address: " + stringAddr)
 }
 
 func (conn *Connection) handleConnectionReply2(addr net.UDPAddr, buffer []byte) {
-	conn.client.SetConnected(true)
+	conn.Client.SetConnected(true)
 
 	//stringAddr := addr.IP.String()
-	//Info("Received connection reply 2 from server address: " + stringAddr)
+	//Info("Received Connection reply 2 from Server address: " + stringAddr)
 
 	pk := protocol.NewOpenConnectionReply2()
 	pk.SetBuffer(buffer)
@@ -119,13 +119,13 @@ func (conn *Connection) handleConnectionReply2(addr net.UDPAddr, buffer []byte) 
 
 	pk.Encode()
 
-	conn.client.WritePacket(pk.Buffer)
+	conn.Client.WritePacket(pk.Buffer)
 }
 
 func (conn *Connection) HandleIncomingPackets() {
-	for true {
+	for {
 		buffer := make([]byte, 2048)
-		_, addr, err := conn.proxy.UDPConn.ReadFromUDP(buffer)
+		_, addr, err := conn.Proxy.UDPConn.ReadFromUDP(buffer)
 
 		if err != nil {
 			Alert(err.Error())
@@ -134,11 +134,11 @@ func (conn *Connection) HandleIncomingPackets() {
 
 		MessageId := buffer[0]
 
-		if conn.client.IsConnected() {
+		if conn.Client.IsConnected() {
 			if conn.IsServer(*addr) {
-				conn.pkHandler.HandleIncomingPacket(buffer, conn.client, *addr)
+				conn.pkHandler.HandleIncomingPacket(buffer, conn.Client, *addr)
 			} else {
-				conn.pkHandler.HandleIncomingPacket(buffer, conn.server, *addr)
+				conn.pkHandler.HandleIncomingPacket(buffer, conn.Server, *addr)
 			}
 			continue
 		}
