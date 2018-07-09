@@ -70,10 +70,15 @@ type PacketHandler struct {
 	// the last datagram received from both hosts
 	datagram *protocol.Datagram
 	// a slice of raw packets that will be
-	// sent out the server next tick, packets are sent
-	// every tick via the OutboundPacketTicker,
+	// sent out to the client next tick, packets are sent
+	// every tick via the packet handler,
 	// 20 ticks = 1 second, 1 tick ~ 0.05 seconds
-	OutBoundPackets [][]byte
+	OutBoundPacketsClient [][]byte
+	// a slice of raw packets that will be
+	// sent out to the server next tick, packets are sent
+	// every tick via the packet handler,
+	// 20 ticks = 1 second, 1 tick ~ 0.05 seconds
+	OutBoundPacketsServer [][]byte
 	// a bool that returns true if the
 	// Client is ready for packets
 	Ready bool
@@ -89,7 +94,8 @@ func NewPacketHandler() *PacketHandler {
 	h.splits = Indexes{splits: make(map[int16][]*protocol.EncapsulatedPacket), splitCounts: make(map[int16]uint)}
 	h.DatagramBuilder = NewDatagramBuilder()
 	h.DatagramBuilder.pkHandler = &h
-	h.OutBoundPackets = [][]byte{}
+	h.OutBoundPacketsClient = [][]byte{}
+	h.OutBoundPacketsServer = [][]byte{}
 	h.orders = Orders{}
 	return &h
 }
@@ -130,21 +136,39 @@ func (pkHandler *PacketHandler) FlowDatagram(host Host) {
 }
 
 // adds a packet to the slice of
-// packets that will be sent out the server next tick,
-// packets are sent every tick via the OutboundPacketTicker,
+// packets that will be sent out to the client next tick,
+// packets are sent every tick via the packet handler,
 // 20 ticks = 1 second, 1 tick ~ 0.05 seconds
-func (pkHandler *PacketHandler) AddOutboundPacket(packet packets.IPacket)  {
+func (pkHandler *PacketHandler) AddOutboundPacketClient(packet packets.IPacket)  {
 	packet.EncodeHeader()
 	packet.Encode()
-	pkHandler.OutBoundPackets = append(pkHandler.OutBoundPackets, packet.GetBuffer())
+	pkHandler.OutBoundPacketsClient = append(pkHandler.OutBoundPacketsClient, packet.GetBuffer())
 }
 
 // adds a raw packet to the slice of
-// packets that will be sent out the server next tick,
-// packets are sent every tick via the OutboundPacketTicker,
+// packets that will be sent out to the client next tick,
+// packets are sent every tick via the packet handler,
 // 20 ticks = 1 second, 1 tick ~ 0.05 seconds
-func (pkHandler *PacketHandler) AddOutboundRawPacket(packet []byte)  {
-	pkHandler.OutBoundPackets = append(pkHandler.OutBoundPackets, packet)
+func (pkHandler *PacketHandler) AddOutboundRawPacketClient(packet []byte)  {
+	pkHandler.OutBoundPacketsClient = append(pkHandler.OutBoundPacketsClient, packet)
+}
+
+// adds a packet to the slice of
+// packets that will be sent out to the server next tick,
+// packets are sent every tick via the packet handler,
+// 20 ticks = 1 second, 1 tick ~ 0.05 seconds
+func (pkHandler *PacketHandler) AddOutboundPacketServer(packet packets.IPacket)  {
+	packet.EncodeHeader()
+	packet.Encode()
+	pkHandler.OutBoundPacketsServer = append(pkHandler.OutBoundPacketsServer, packet.GetBuffer())
+}
+
+// adds a raw packet to the slice of
+// packets that will be sent out to the server next tick,
+// packets are sent every tick via the packet handler,
+// 20 ticks = 1 second, 1 tick ~ 0.05 seconds
+func (pkHandler *PacketHandler) AddOutboundRawPacketServer(packet []byte)  {
+	pkHandler.OutBoundPacketsServer = append(pkHandler.OutBoundPacketsServer, packet)
 }
 
 // handles encapsulated packet
@@ -167,12 +191,19 @@ func (pkHandler *PacketHandler) HandleEncapsulated(packet *protocol.Encapsulated
 				}
 			}
 
-			if len(pkHandler.OutBoundPackets) > 0 {
-				if host.IsServer() {
-					for _, pk := range pkHandler.OutBoundPackets {
+			if host.IsServer() {
+				if toServer := pkHandler.OutBoundPacketsServer; len(toServer) > 0 {
+					for _, pk := range toServer {
 						batch2.AddRawPacket(pk)
 					}
-					pkHandler.OutBoundPackets = nil
+					pkHandler.OutBoundPacketsServer = nil
+				}
+			}else{
+				if toClient := pkHandler.OutBoundPacketsClient; len(toClient) > 0 {
+					for _, pk := range toClient {
+						batch2.AddRawPacket(pk)
+					}
+					pkHandler.OutBoundPacketsClient = nil
 				}
 			}
 
@@ -188,6 +219,7 @@ func (pkHandler *PacketHandler) HandleEncapsulated(packet *protocol.Encapsulated
 			dgram.AddPacket(encap)
 			dgram.SequenceNumber = pkHandler.lastSequenceNumber
 			dgram.Encode()
+
 			host.WritePacket(dgram.Buffer)
 
 			handled = true
