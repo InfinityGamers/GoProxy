@@ -1,8 +1,8 @@
-package mcpeproxy
+package goproxy
 
 import (
-	"github.com/infinitygamers/mcpeproxy/info"
-	"github.com/infinitygamers/mcpeproxy/packets"
+	"github.com/infinitygamers/goproxy/info"
+	"github.com/infinitygamers/goproxy/packets"
 )
 
 func RegisterDefaultHandlers(pkHandler *PacketHandler)  {

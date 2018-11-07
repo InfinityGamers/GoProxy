@@ -4,8 +4,8 @@ import (
 	"github.com/golang/geo/r3"
 	"github.com/irmine/gomine/net/info"
 	"github.com/Irmine/GoMine/net/packets"
-	"github.com/infinitygamers/mcpeproxy/packets/inventoryio"
-	"github.com/infinitygamers/mcpeproxy/packets/inventoryio/stream"
+	"github.com/infinitygamers/goproxy/packets/inventoryio"
+	"github.com/infinitygamers/goproxy/packets/inventoryio/stream"
 )
 
 /**

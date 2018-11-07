@@ -3,7 +3,7 @@ package packets
 import (
 	"github.com/Irmine/GoMine/net/packets"
 	"github.com/irmine/worlds/entities/data"
-	info2 "github.com/infinitygamers/mcpeproxy/info"
+	info2 "github.com/infinitygamers/goproxy/info"
 )
 
 type UpdateAttributesPacket struct {

@@ -4,7 +4,7 @@ import (
 	"github.com/golang/geo/r3"
 	"github.com/Irmine/GoMine/net/packets"
 	"github.com/irmine/worlds/entities/data"
-	"github.com/infinitygamers/mcpeproxy/info"
+	"github.com/infinitygamers/goproxy/info"
 )
 
 type AddEntityPacket struct {

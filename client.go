@@ -1,8 +1,8 @@
-package mcpeproxy
+package goproxy
 
 import (
 	"net"
-	"github.com/infinitygamers/mcpeproxy/packets"
+	"github.com/infinitygamers/goproxy/packets"
 	"github.com/google/uuid"
 	packets2 "github.com/Irmine/GoMine/net/packets"
 	"time"

@@ -1,7 +1,7 @@
 package inventoryio
 
 import (
-	"github.com/infinitygamers/mcpeproxy/packets/inventoryio/stream"
+	"github.com/infinitygamers/goproxy/packets/inventoryio/stream"
 )
 
 type InventoryActionIOList struct {

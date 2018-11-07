@@ -5,7 +5,7 @@ import (
 	"github.com/golang/geo/r3"
 	"github.com/irmine/worlds/entities/data"
 	"github.com/Irmine/GoMine/net/packets"
-	"github.com/infinitygamers/mcpeproxy/info"
+	"github.com/infinitygamers/goproxy/info"
 )
 
 type AddPlayerPacket struct {

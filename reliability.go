@@ -1,4 +1,4 @@
-package mcpeproxy
+package goproxy
 
 const (
 	Unreliable = iota + 0x00

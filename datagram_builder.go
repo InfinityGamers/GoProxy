@@ -1,4 +1,4 @@
-package mcpeproxy
+package goproxy
 
 import (
 	"github.com/Irmine/GoMine/net/packets"

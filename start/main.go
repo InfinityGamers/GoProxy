@@ -1,7 +1,7 @@
 package main
 
 import (
-	"github.com/infinitygamers/mcpeproxy"
+	"github.com/infinitygamers/goproxy"
 )
 
 func main()  {

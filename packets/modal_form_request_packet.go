@@ -2,7 +2,7 @@ package packets
 
 import (
 	"github.com/Irmine/GoMine/net/packets"
-	"github.com/infinitygamers/mcpeproxy/info"
+	"github.com/infinitygamers/goproxy/info"
 )
 
 type ModalFormRequestPacket struct {
