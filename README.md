@@ -1,26 +1,100 @@
-# GoProxy (broken and outdated)
+# 🚀 GoProxy (Archived)
 
-### GoProxy is a man-in-the-middle (MITM) proxy, it works by intercepting and modifying packets between the client and the server.
+A lightweight proxy server written in Go, originally designed to forward and inspect Minecraft server traffic.
 
-### How to use
+> ⚠️ **Status:** Archived — this project is no longer maintained and is kept for portfolio purposes only.  
+> Changes in the Minecraft protocol (notably encryption requirements) have made this implementation obsolete.
 
-To use you must have Go version 1.9 or greater installed.
+---
 
-1. clone the project: `go get github.com/InfinityGamers/GoProxy`
-2. navigate to the clone directory
-3. install dependencies with `go install`
-4. compile it and run it
-# Example use cases
-### In this case it was mainly used to have advantages in Minecraft.
+## 🧠 Overview
 
-## KILLAURA CHEATS
-[![IMAGE ALT TEXT HERE](https://img.youtube.com/vi/w4J-HzICmWc/0.jpg)](https://www.youtube.com/watch?v=w4J-HzICmWc)
-## SPEED/KILLAURA/FLYING CHEATS
-[![IMAGE ALT TEXT HERE](https://img.youtube.com/vi/h43zbAWX7zQ/0.jpg)](https://www.youtube.com/watch?v=h43zbAWX7zQ)
-## AUTOMATED MINECRAFT PVP BOT
-[![IMAGE ALT TEXT HERE](https://img.youtube.com/vi/2NqTOBOu0-Y/0.jpg)](https://www.youtube.com/watch?v=2NqTOBOu0-Y)
+GoProxy was built as an experimental project to explore:
 
-### Notices
+- Low-level network programming in Go  
+- TCP proxying and packet forwarding  
+- Real-time client-server communication  
+- Reverse engineering and understanding the Minecraft protocol (pre-encryption)
 
-This will not work on encrypted servers such as LBSG, Mineplex, etc. <br><br>
-At the moment it has very simple features, but I will continue on updating as much as I can. <br>
+At the time of development, the proxy successfully intercepted and forwarded traffic between a Minecraft client and server.
+
+---
+
+## ✨ Features (at the time)
+
+- TCP proxy for Minecraft traffic  
+- Real-time packet forwarding  
+- Lightweight and minimal dependencies  
+- Clean and readable Go codebase  
+
+---
+
+## ⚠️ Limitations
+
+This project no longer works with modern Minecraft servers due to:
+
+- Introduction of encrypted communication  
+- Changes in handshake and authentication mechanisms  
+
+Supporting current versions would require:
+
+- Implementing encryption handling  
+- Updating protocol compatibility  
+- Supporting modern authentication flows  
+
+---
+
+## 📦 Installation (Historical)
+
+```bash
+git clone https://github.com/InfinityGamers/GoProxy.git
+cd GoProxy
+go build -o goproxy
+./goproxy
+```
+
+---
+
+## 🎮 Example Use Cases
+
+This project was used as a foundation for experimenting with gameplay automation and client-side behavior modification through network-level control.
+
+---
+
+## 🎥 Demonstrations
+
+### ⚔️ Combat Automation (Killaura)
+[![Combat Automation Demo](https://img.youtube.com/vi/w4J-HzICmWc/0.jpg)](https://www.youtube.com/watch?v=w4J-HzICmWc)
+
+---
+
+### ⚡ Movement & Combat Enhancements
+[![Movement & Combat Demo](https://img.youtube.com/vi/h43zbAWX7zQ/0.jpg)](https://www.youtube.com/watch?v=h43zbAWX7zQ)
+
+---
+
+### 🤖 Automated PvP Bot
+[![PvP Bot Demo](https://img.youtube.com/vi/2NqTOBOu0-Y/0.jpg)](https://www.youtube.com/watch?v=2NqTOBOu0-Y)
+
+---
+
+## 🧪 Learning Outcomes
+
+This project demonstrates:
+
+- Building concurrent network services in Go  
+- Working with raw TCP sockets and streams  
+- Inspecting and manipulating protocol-level data  
+- Designing simple but effective proxy architectures  
+
+---
+
+## 💡 Note for Reviewers
+
+This project is included as part of my portfolio to showcase early experience with:
+
+- Systems programming  
+- Networking and proxies  
+- Real-time data handling  
+
+While it is no longer compatible with current Minecraft versions, it reflects strong foundational knowledge in backend and network engineering.
