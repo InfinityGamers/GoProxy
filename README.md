@@ -12,7 +12,7 @@ A lightweight proxy server written in Go, originally designed to forward and ins
 GoProxy was built as an experimental project to explore:
 
 - Low-level network programming in Go  
-- TCP proxying and packet forwarding  
+- UDP proxying and packet forwarding  
 - Real-time client-server communication  
 - Reverse engineering and understanding the Minecraft protocol (pre-encryption)
 
@@ -22,7 +22,7 @@ At the time of development, the proxy successfully intercepted and forwarded tra
 
 ## ✨ Features (at the time)
 
-- TCP proxy for Minecraft traffic  
+- UDP proxy for Minecraft traffic  
 - Real-time packet forwarding  
 - Lightweight and minimal dependencies  
 - Clean and readable Go codebase  
@@ -83,7 +83,7 @@ This project was used as a foundation for experimenting with gameplay automation
 This project demonstrates:
 
 - Building concurrent network services in Go  
-- Working with raw TCP sockets and streams  
+- Working with raw UDP sockets and streams  
 - Inspecting and manipulating protocol-level data  
 - Designing simple but effective proxy architectures  
 
